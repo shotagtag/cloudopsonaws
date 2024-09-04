@@ -1,0 +1,33 @@
+description: Stop EC2 instances(s)
+schemaVersion: '0.3'
+assumeRole: '{{ AutomationAssumeRole }}'
+parameters:
+  InstanceId:
+    type: StringList
+    description: (Required) EC2 Instance(s) to stop
+  AutomationAssumeRole:
+    type: String
+    description: (Optional) The ARN of the role that allows Automation to perform the actions on your behalf.
+    default: ''
+mainSteps:
+- name: approve
+  action: aws:approve
+  timeoutSeconds: 1000
+  onFailure: Abort
+  inputs:
+    NotificationArn: <SNSトピックARN>
+    Message: "承認おねがいします〜"
+    MinRequiredApprovals: 1
+    Approvers:
+    - <承認者のIAMロールやIAMユーザのARN>
+- name: stopInstances
+  action: 'aws:changeInstanceState'
+  onFailure: Continue
+  inputs:
+    InstanceIds: '{{ InstanceId }}'
+    DesiredState: stopped
+- name: startInstances
+  action: 'aws:changeInstanceState'
+  inputs:
+    InstanceIds: '{{ InstanceId }}'
+    DesiredState: running
