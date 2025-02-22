@@ -104,6 +104,8 @@ Which default metrics config do you want?
 4. None
 default choice: [1]:
 3    <--- 3を入力 # 取得するメトリクスのセットを指定
+```
+```
 Current config as follows:
 {
         "agent": {
@@ -179,7 +181,7 @@ Are you satisfied with the above config? Note: it can be manually customized aft
 1. yes
 2. no
 default choice: [1]:
-    <--- enterキーを入力(デフォルトを適用)
+    <--- enterキーを入力(デフォルトを適用) # このコンフィグ内容で良いかの確認
 ```
 ```
 Do you have any existing CloudWatch Log Agent (http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AgentReference.html) configuration file to import for migration?
@@ -193,111 +195,20 @@ Do you want to monitor any log files?
 1. yes
 2. no
 default choice: [1]:
-2    <--- 2を入力
+2    <--- 2を入力 # CloudWatch Logsに送りたいログはあるか
 ```
 ```
 Do you want the CloudWatch agent to also retrieve X-ray traces?
 1. yes
 2. no
 default choice: [1]:
-2    <--- 2を入力
+2    <--- 2を入力 # AWS X-Ray トレース情報を取得する役割も有効化するか？
 ```
 ```
-Existing config JSON identified and copied to:  /opt/aws/amazon-cloudwatch-agent/etc/backup-configs
-Saved config file to /opt/aws/amazon-cloudwatch-agent/bin/config.json successfully.
-Current config as follows:
-{
-        "agent": {
-                "metrics_collection_interval": 60,
-                "run_as_user": "cwagent"
-        },
-        "logs": {
-                "logs_collected": {
-                        "files": {
-                                "collect_list": [
-                                        {
-                                                "file_path": "/var/log/messages",
-                                                "log_group_class": "STANDARD",
-                                                "log_group_name": "messages",
-                                                "log_stream_name": "{instance_id}",
-                                                "retention_in_days": -1
-                                        }
-                                ]
-                        }
-                }
-        },
-        "metrics": {
-                "aggregation_dimensions": [
-                        [
-                                "InstanceId"
-                        ]
-                ],
-                "metrics_collected": {
-                        "cpu": {
-                                "measurement": [
-                                        "cpu_usage_idle",
-                                        "cpu_usage_iowait",
-                                        "cpu_usage_user",
-                                        "cpu_usage_system"
-                                ],
-                                "metrics_collection_interval": 60,
-                                "resources": [
-                                        "*"
-                                ],
-                                "totalcpu": false
-                        },
-                        "disk": {
-                                "measurement": [
-                                        "used_percent",
-                                        "inodes_free"
-                                ],
-                                "metrics_collection_interval": 60,
-                                "resources": [
-                                        "*"
-                                ]
-                        },
-                        "diskio": {
-                                "measurement": [
-                                        "io_time",
-                                        "write_bytes",
-                                        "read_bytes",
-                                        "writes",
-                                        "reads"
-                                ],
-                                "metrics_collection_interval": 60,
-                                "resources": [
-                                        "*"
-                                ]
-                        },
-                        "mem": {
-                                "measurement": [
-                                        "mem_used_percent"
-                                ],
-                                "metrics_collection_interval": 60
-                        },
-                        "netstat": {
-                                "measurement": [
-                                        "tcp_established",
-                                        "tcp_time_wait"
-                                ],
-                                "metrics_collection_interval": 60
-                        },
-                        "swap": {
-                                "measurement": [
-                                        "swap_used_percent"
-                                ],
-                                "metrics_collection_interval": 60
-                        }
-                }
-        }
-}
-Please check the above content of the config.
-The config file is also located at /opt/aws/amazon-cloudwatch-agent/bin/config.json.
-Edit it manually if needed.
 Do you want to store the config in the SSM parameter store?
 1. yes
 2. no
 default choice: [1]:
-2    <--- 2を入力
+2    <--- 2を入力 # パラメータストアにコンフィグを保管するか？
 Program exits now.
 ```
