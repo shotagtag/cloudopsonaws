@@ -1,13 +1,14 @@
 # CloudWatch AgentをEC2インスタンスにインストールしてみよう🚀
 
-EC2インスタンスの詳細なメトリクスを取得したい場合には、CloudWatchエージェントを利用できます。
-エージェントは常駐プログラムとして動作し、OS 内部から取得できる情報をメトリクスとして pushしたり、指定されたログファイルを CloudWatch Logs サービスに転送したりできます。
+EC2インスタンスはデフォルトで、CPU使用率やネットワーク流量が取得されます。ただし、メモリ使用量やディスク使用率などOSレベルのメトリクスは提供されません。OSレベルの詳細なメトリクスを取得したい場合には、CloudWatchエージェントを利用できます。エージェントは常駐プログラムとして動作し、OS 内部から取得できる情報をメトリクスとして pushしたり、指定されたログファイルを CloudWatch Logs サービスに転送したりできます。
 ラボ1の環境を流用し、EC2インスタンスにCloudWatchエージェントをインストールしてみましょう。
 
 ### 1.EC2インスタンスにCWエージェントをインストール、コンフィグファイルを作成
 
-1. いずれかのEC2インスタンスにセッションマネージャーでログインします。
-2. rootユーザーに切り替えます。
+1. いずれかのEC2インスタンス(Web Server または App Server)にセッションマネージャーでログインします。
+![image](https://github.com/user-attachments/assets/b95dddb7-9741-4b57-bfaa-58d74a3d42c3)
+
+3. rootユーザーに切り替えます。
 ```
 sudo su -
 ```
@@ -43,21 +44,21 @@ Which user are you planning to run the agent?
 2. root
 3. others
 default choice: [1]:
-2    <--- 2を入力 # エージェントプロセス実行ユーザーの指定(実行ユーザーのログ読み取り権限などに注意する)
+    <--- enterキーを入力(デフォルトを適用) # エージェントプロセス実行ユーザーの指定(ログを送信する場合読み取り権限に注意する)
 ```
 ```
 Do you want to turn on StatsD daemon?
 1. yes
 2. no
 default choice: [1]:
-2    <--- 2を入力 # statsdを使用しカスタムメトリクスを取得するかどうか
+2    <--- 2を入力 # statsdと連携し、より発展的なカスタムメトリクスを取得するかどうか
 ```
 ```
 Do you want to monitor metrics from CollectD? WARNING: CollectD must be installed or the Agent will fail to start
 1. yes
 2. no
 default choice: [1]:
-2    <--- 2を入力 # collectdを使用しカスタムメトリクスを取得するかどうか
+2    <--- 2を入力 # collectdと連携し、より発展的なカスタムメトリクスを取得するかどうか
 ```
 ```
 Do you want to monitor any host metrics? e.g. CPU, memory, etc.
@@ -71,21 +72,21 @@ Do you want to monitor cpu metrics per core?
 1. yes
 2. no
 default choice: [1]:
-2    <--- 2を入力 # CPUコアごとにCPUメトリクスを取得するかどうか
+    <--- enterキーを入力(デフォルトを適用) # CPUコアごとにCPUメトリクスを取得するかどうか
 ```
 ```
 Do you want to add ec2 dimensions (ImageId, InstanceId, InstanceType, AutoScalingGroupName) into all of your metrics if the info is available?
 1. yes
 2. no
 default choice: [1]:
-    <--- enterキーを入力(デフォルトを適用) # 全てのメトリクスに提示された追加ディメンションを付加するかどうか
+    <--- enterキーを入力(デフォルトを適用) # 全てのメトリクスに、提示された追加ディメンションが付加できる場合付与するかどうか
 ```
 ```
 Do you want to aggregate ec2 dimensions (InstanceId)?
 1. yes
 2. no
 default choice: [1]:
-    <--- enterキーを入力(デフォルトを適用) # 未調査
+    <--- enterキーを入力(デフォルトを適用)
 ```
 ```
 Would you like to collect your metrics at high resolution (sub-minute resolution)? This enables sub-minute resolution for all metrics, but you can customize for specific metrics in the output json file.
@@ -103,7 +104,7 @@ Which default metrics config do you want?
 3. Advanced
 4. None
 default choice: [1]:
-3    <--- 3を入力 # 取得するメトリクスのセットを指定
+3    <--- 3を入力 # どの(レベルの)既定のメトリクスセット設定がよいか指定
 ```
 ```
 Current config as follows:
@@ -118,6 +119,12 @@ Current config as follows:
                                 "InstanceId"
                         ]
                 ],
+                "append_dimensions": {
+                        "AutoScalingGroupName": "${aws:AutoScalingGroupName}",
+                        "ImageId": "${aws:ImageId}",
+                        "InstanceId": "${aws:InstanceId}",
+                        "InstanceType": "${aws:InstanceType}"
+                },
                 "metrics_collected": {
                         "cpu": {
                                 "measurement": [
@@ -205,6 +212,12 @@ default choice: [1]:
 2    <--- 2を入力 # AWS X-Ray トレース情報を取得する役割も有効化するか？
 ```
 ```
+xisting config JSON identified and copied to:  /opt/aws/amazon-cloudwatch-agent/etc/backup-configs
+Saved config file to /opt/aws/amazon-cloudwatch-agent/bin/config.json successfully.
+Current config as follows:
+
+<json表示中略>
+
 Do you want to store the config in the SSM parameter store?
 1. yes
 2. no
@@ -235,5 +248,8 @@ systemctl status amazon-cloudwatch-agent.service
 ```
 
 9. マネジメントコンソールで CloudWatch を開きます。
-10. 左ナビゲーションペインから、**すべてのメトリクス** を選択します。
-11. `CWAgent`の名前空間をクリックし、メトリクスが収集されているか確認します。
+11. 左ナビゲーションペインから、**すべてのメトリクス** を選択します。
+![image](https://github.com/user-attachments/assets/646d3b9e-743a-44dc-babb-44d3cd2b7bf0)
+
+13. `CWAgent`の名前空間をクリックし、メトリクスが収集されているか確認します。
+![image](https://github.com/user-attachments/assets/35a5595b-4b54-43e9-a34a-05b41756d92a)
