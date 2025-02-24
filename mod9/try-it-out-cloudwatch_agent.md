@@ -35,7 +35,7 @@ I! imds retry client will retry 1 timesAre you using EC2 or On-Premises hosts?
 1. EC2
 2. On-Premises
 default choice: [1]:
-    <--- enterキーを入力(デフォルトを適用) # EC2
+    <--- enterキーを入力(デフォルトを適用) # 監視対象のEC2インスタンス or オンプレサーバーどちらか
 ```
 ```
 Which user are you planning to run the agent?
@@ -64,7 +64,7 @@ Do you want to monitor any host metrics? e.g. CPU, memory, etc.
 1. yes
 2. no
 default choice: [1]:
-    <--- enterキーを入力(デフォルトを適用) # CPUやメモリなどのメトリクスを取得するかどうか
+    <--- enterキーを入力(デフォルトを適用) # CPUやメモリなどのホスト詳細メトリクスを取得するかどうか
 ```
 ```
 Do you want to monitor cpu metrics per core?
@@ -188,7 +188,7 @@ Do you have any existing CloudWatch Log Agent (http://docs.aws.amazon.com/Amazon
 1. yes
 2. no
 default choice: [2]:
-    <--- enterキーを入力(デフォルトを適用)
+    <--- enterキーを入力(デフォルトを適用) # 既存のCloudWatch Logs Agent(旧ツール)があり、マイグレーションしたいか？
 ```
 ```
 Do you want to monitor any log files?
@@ -209,6 +209,31 @@ Do you want to store the config in the SSM parameter store?
 1. yes
 2. no
 default choice: [1]:
-2    <--- 2を入力 # パラメータストアにコンフィグを保管するか？
+2    <--- 2を入力 # Systems Manager パラメータストアにコンフィグを保管するか？
 Program exits now.
 ```
+
+6. ローカルに生成されたコンフィグファイルを確認します。
+```
+cat /opt/aws/amazon-cloudwatch-agent/bin/config.json
+```
+
+7. コンフィグファイルを基に CLoudWatchエージェントを起動します。
+```
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json
+```
+★コマンドの意味参考
+- `-a fetch-config` : アクション（-a）として "fetch-config" を指定しています。これは設定ファイルを取得し、適用することを意味します。
+- `-m ec2` : モード（-m）として "ec2" を指定しています。エージェントが EC2 インスタンス上で動作していることを示します。
+- `-s` : コンフィグファイルの再読み込みや追加などを行った場合、ついでにエージェントを再起動するかどうかのオプションです。
+- `-c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json` : 設定ファイル（-c）のパスを指定しています。この場合、ローカルファイルシステム上の JSON 設定ファイルを使用します。他にssmパラメータストア(ssm:)やトライアル用のコンフィグ(default)を指定することもできます。
+
+8. エージェントが起動しているか確認します。
+- `Active: active (running)`の表示があれば起動しています
+```
+systemctl status amazon-cloudwatch-agent.service
+```
+
+9. マネジメントコンソールで CloudWatch を開きます。
+10. 左ナビゲーションペインから、**すべてのメトリクス** を選択します。
+11. `CWAgent`の名前空間をクリックし、メトリクスが収集されているか確認します。
