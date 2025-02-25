@@ -8,7 +8,7 @@ EC2インスタンスはデフォルトで、CPU使用率やネットワーク�
 1. いずれかのEC2インスタンス(Web Server または App Server)にセッションマネージャーでログインします。
 ![image](https://github.com/user-attachments/assets/b95dddb7-9741-4b57-bfaa-58d74a3d42c3)
 
-3. rootユーザーに切り替えます。
+2. rootユーザーに切り替えます。
 ```
 sudo su -
 ```
