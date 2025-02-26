@@ -19,7 +19,7 @@ yum install amazon-cloudwatch-agent -y
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
 ```
 
-5. 起動したら次の出力を参考に質問に答えます。間違えたらctrl+cなどで中断し、4からやり直してください。
+5. 起動したら次の出力を参考に質問に答えます。明示的に数字を入力する際は半角で入力してください(全角文字は入れないでください)。入力を間違えたらctrl+cなどで中断し、4からやり直してください。
 ```
 On which OS are you planning to use the agent?
 1. linux
@@ -210,7 +210,7 @@ default choice: [1]:
 2    <--- 2を入力 # AWS X-Ray トレース情報を取得する役割も有効化するか？
 ```
 ```
-xisting config JSON identified and copied to:  /opt/aws/amazon-cloudwatch-agent/etc/backup-configs
+Existing config JSON identified and copied to:  /opt/aws/amazon-cloudwatch-agent/etc/backup-configs
 Saved config file to /opt/aws/amazon-cloudwatch-agent/bin/config.json successfully.
 Current config as follows:
 
