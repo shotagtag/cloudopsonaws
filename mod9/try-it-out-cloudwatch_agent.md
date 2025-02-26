@@ -246,8 +246,8 @@ systemctl status amazon-cloudwatch-agent.service
 ```
 
 9. マネジメントコンソールで CloudWatch を開きます。
-11. 左ナビゲーションペインから、**すべてのメトリクス** を選択します。
+10. 左ナビゲーションペインから、**すべてのメトリクス** を選択します。
 ![image](https://github.com/user-attachments/assets/646d3b9e-743a-44dc-babb-44d3cd2b7bf0)
 
-13. `CWAgent`の名前空間をクリックし、メトリクスが収集されているか確認します。
+11. `CWAgent`の名前空間をクリックし、メトリクスが収集されているか確認します。`CWAgent`が表示されていない場合数分待ってから画面を更新してみてください。
 ![image](https://github.com/user-attachments/assets/35a5595b-4b54-43e9-a34a-05b41756d92a)
