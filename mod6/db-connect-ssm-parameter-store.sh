@@ -12,3 +12,5 @@ DB_NAME=$(aws ssm get-parameter --name "/mydatabase/database" --query "Parameter
 
 # MySQLデータベース に接続
 mysql -h $DB_HOST -u $DB_USER -p$DB_PASS $DB_NAME
+
+# * 本来は "aws ssm get-parameters-by-path --path /mydatabase/ --with-decryption" のようにまとめてパラメータを取得したほう、API呼び出し回数の観点などから望ましい
