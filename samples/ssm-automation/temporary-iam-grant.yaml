@@ -1,0 +1,160 @@
+schemaVersion: '0.3'
+description: |
+  Approve → temporarily attach AdministratorAccess to an IAM User or Role → auto-detach after the specified duration. The approval notification includes the request reason.
+assumeRole: '{{ AutomationAssumeRole }}'
+parameters:
+  TargetPrincipalType:
+    type: String
+    description: 一時的に付与する対象のIAMプリンシパル種別（User または Role）
+    allowedValues:
+      - User
+      - Role
+  TargetPrincipalName:
+    type: String
+    description: 一時的に付与する対象の IAM ユーザー名 または ロール名（種別に合わせる）
+  DurationMinutes:
+    type: String
+    description: 作業に必要な時間、一時付与する時間を指定してください（デフォルト 5分）
+    default: '5'
+    allowedPattern: ^[1-9][0-9]*$
+  Reason:
+    type: String
+    description: 申請理由（承認依頼に記載されます）
+  ApproverArns:
+    type: StringList
+    description: 承認者の IAM ユーザー／ロール ARN（1件以上）
+  NotificationArn:
+    type: String
+    description: 承認依頼を送る SNS トピック ARN
+    default: ''
+  PolicyArn:
+    type: String
+    description: 一時的に付与を希望するIAMポリシー(ARN)
+    default: arn:aws:iam::aws:policy/AdministratorAccess
+  AutomationAssumeRole:
+    type: String
+    description: このオートメーションを実行するための IAM ロール ARN（IAM ポリシーのAttach/Detach 実行権限が必要です）
+mainSteps:
+  - name: Approval
+    action: aws:approve
+    timeoutSeconds: 86400
+    nextStep: DecidePrincipalType
+    isEnd: false
+    inputs:
+      Approvers: '{{ ApproverArns }}'
+      MinRequiredApprovals: 1
+      NotificationArn: '{{ NotificationArn }}'
+      Message: ' [SSM Automation 承認依頼]  対象: {{ TargetPrincipalType }}/{{ TargetPrincipalName }}  付与ポリシー: {{ PolicyArn }} 付与時間(分): {{ DurationMinutes }} 申請理由: {{ Reason }} ※ 承認すると指定時間後に自動的に権限は剥奪されます。'
+  - name: DecidePrincipalType
+    action: aws:branch
+    inputs:
+      Choices:
+        - NextStep: AttachToUser
+          Variable: '{{ TargetPrincipalType }}'
+          StringEquals: User
+        - NextStep: AttachToRole
+          Variable: '{{ TargetPrincipalType }}'
+          StringEquals: Role
+      Default: FailInvalidType
+  - name: AttachToUser
+    action: aws:executeAwsApi
+    nextStep: WaitGrantDuration
+    isEnd: false
+    onFailure: step:RevokeBestEffort
+    inputs:
+      Service: iam
+      Api: AttachUserPolicy
+      UserName: '{{ TargetPrincipalName }}'
+      PolicyArn: '{{ PolicyArn }}'
+  - name: AttachToRole
+    action: aws:executeAwsApi
+    nextStep: WaitGrantDuration
+    isEnd: false
+    onFailure: step:RevokeBestEffort
+    inputs:
+      Service: iam
+      Api: AttachRolePolicy
+      RoleName: '{{ TargetPrincipalName }}'
+      PolicyArn: '{{ PolicyArn }}'
+  - description: aws:sleep で指定分待機
+    name: WaitGrantDuration
+    action: aws:sleep
+    nextStep: DecideDetachType
+    isEnd: false
+    inputs:
+      Duration: PT{{ DurationMinutes }}M
+  - name: DecideDetachType
+    action: aws:branch
+    inputs:
+      Choices:
+        - NextStep: DetachFromUser
+          Variable: '{{ TargetPrincipalType }}'
+          StringEquals: User
+        - NextStep: DetachFromRole
+          Variable: '{{ TargetPrincipalType }}'
+          StringEquals: Role
+      Default: FailInvalidType
+  - name: DetachFromUser
+    action: aws:executeAwsApi
+    isEnd: true
+    inputs:
+      Service: iam
+      Api: DetachUserPolicy
+      UserName: '{{ TargetPrincipalName }}'
+      PolicyArn: '{{ PolicyArn }}'
+  - name: DetachFromRole
+    action: aws:executeAwsApi
+    isEnd: true
+    inputs:
+      Service: iam
+      Api: DetachRolePolicy
+      RoleName: '{{ TargetPrincipalName }}'
+      PolicyArn: '{{ PolicyArn }}'
+  - name: RevokeBestEffort
+    action: aws:branch
+    inputs:
+      Choices:
+        - NextStep: RevokeFromUser
+          Variable: '{{ TargetPrincipalType }}'
+          StringEquals: User
+        - NextStep: RevokeFromRole
+          Variable: '{{ TargetPrincipalType }}'
+          StringEquals: Role
+      Default: EndFail
+  - name: RevokeFromUser
+    action: aws:executeAwsApi
+    isEnd: true
+    inputs:
+      Service: iam
+      Api: DetachUserPolicy
+      UserName: '{{ TargetPrincipalName }}'
+      PolicyArn: '{{ PolicyArn }}'
+  - name: RevokeFromRole
+    action: aws:executeAwsApi
+    isEnd: true
+    inputs:
+      Service: iam
+      Api: DetachRolePolicy
+      RoleName: '{{ TargetPrincipalName }}'
+      PolicyArn: '{{ PolicyArn }}'
+  - name: FailInvalidType
+    action: aws:assertAwsResourceProperty
+    nextStep: EndFail
+    isEnd: false
+    inputs:
+      Service: ssm
+      Api: GetAutomationExecution
+      AutomationExecutionId: '{{ automation:EXECUTION_ID }}'
+      PropertySelector: $.AutomationExecution.AutomationExecutionStatus
+      DesiredValues:
+        - '***INVALID_TARGET_TYPE***'
+  - name: EndFail
+    action: aws:assertAwsResourceProperty
+    isEnd: true
+    inputs:
+      Service: ssm
+      Api: GetAutomationExecution
+      AutomationExecutionId: '{{ automation:EXECUTION_ID }}'
+      PropertySelector: $.AutomationExecution.AutomationExecutionStatus
+      DesiredValues:
+        - '***FAIL***'
